@@ -24,8 +24,6 @@ WORKDIR ./gamallo-QueLingua-10cc405
 RUN chmod -R 777 ./*
 RUN . ./install_quelingua.sh
 
-#ADD https://github.com/gamallo/QueLingua.git /QueLingua/
-
 WORKDIR /QueLingua
 COPY ./ /QueLingua/
 CMD ["python3", "serve.py"]
