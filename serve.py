@@ -12,6 +12,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 APP_ROOT = "./"
 app.config["APPLICATION_ROOT"] = APP_ROOT
 app.config["UPLOAD_FOLDER"] = "files/"
+app.config["JSON_ADD_STATUS"] = False
 
 json_app = FlaskJSON(app)
 
@@ -24,9 +25,21 @@ langs_and_vars.update(varieties)
 def predict_json():
 
     data = request.get_json()
-    if (data.get("type") != "text") or ("content" not in data):
-        output = invalid_request_error(None)
-        return output
+    if data["type"] != "text":
+        # Standard message code for unsupported response type
+        return generate_failure_response(
+            status=400,
+            code="elg.request.type.unsupported",
+            text="Request type {0} not supported by this service",
+            params=[data["type"]],
+            detail=None,
+        )
+
+    if "content" not in data:
+        return invalid_request_error(
+            None,
+        )
+
     elif "params" in data:
         params = data.get("params")
         variant = (
@@ -42,8 +55,8 @@ def predict_json():
     if len(str(content)) < 5:
         return generate_failure_response(
             status=400,
-            code="elg.request.invalid",
-            text="The input text is too short",
+            code="elg.request.type.unsupported",
+            text="Request text is too short.",
             params=None,
             detail=None,
         )
@@ -53,12 +66,14 @@ def predict_json():
             output = generate_successful_response(content, predictions)
             return output
         except Exception as e:
+            text = "Unexpected error."
+            # Standard message for internal error - the real error message goes in params
             return generate_failure_response(
-                status=404,
+                status=500,
                 code="elg.service.internalError",
-                text=None,
-                params=None,
-                detail=str(e),
+                text="Internal error during processing: {0}",
+                params=[text],
+                detail=e.__str__(),
             )
 
 
